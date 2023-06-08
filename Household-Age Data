@@ -1,0 +1,155 @@
+Select *
+From household;
+
+-- Member belongs to 'High' segment lebel whose expeses is more than 9000
+
+Select Distinct member_name, expenses,
+CASE 
+When expenses < 6000 then 'LOW'
+When expenses <= 9000 then 'MEDIUM'
+Else 'HIGH'
+END as Segment_Lebel
+From household
+having Segment_Lebel = 'HIGH';
+
+-- Household members count on age-group
+
+Select count(*),
+CASE
+When age < 20 then 'below 20'
+when age <= 30 then '20-30'
+when age <= 40 then '30-40'
+when age <= 50 then '40-50'
+when age <= 60 then '50-60'
+else 'above 60'
+end as age_segment
+From
+(Select timestampdiff (YEAR, birth_date, Now()) as age
+From household) as t1
+Group By age_segment;
+
+-- Information about household members whose expenses is more than income
+
+Select Sum (income) as Total_Income, Sum (expenses) as Total_Expenses, member_name
+From household
+Group by member_name
+having Total_Expenses > Total_Income;
+
+SELECT * 
+FROM household 
+WHERE (CASE WHEN expenses - income < 0 THEN 0 ELSE expenses - income END) > 0
+
+-- Retrieve the details of members who were born after 1990 and whose major expense type is either "Rent" or "Mortgage."
+
+Select *
+From household
+Where Year (birth_date) > '1990' and (major_expense_type = 'Rent' or major_expense_type = 'Mortgage');
+
+SELECT * 
+FROM household 
+WHERE birth_date > '1990-01-01' AND (CASE WHEN major_expense_type = 'Rent' THEN 1 WHEN major_expense_type = 'Mortgage' THEN 1 ELSE 0 END) = 1;
+
+-- Which member(s) of the household has/have the highest net income among those whose major expense type is either 'Rent' or 'Mortgage
+
+Select member_name, sum (income-expenses) as Net_Income
+From household
+Where major_expense_type = 'Rent' or major_expense_type = 'Mortgage'
+Group by member_name
+Order by Net_Income desc
+Limit 2;
+
+-- Member of the household has the highest ratio of income to expense
+
+Select *, income/expenses as ratio1
+From household
+Where
+income/expenses =
+                    (Select max (ratio)
+                    From
+                    (Select member_id, income/expenses as ratio
+                    From household) as t1);
+                    
+-- Age group has the highest average income
+
+Select Avg (income),
+CASE
+When age < 20 then 'below 20'
+when age <= 30 then '20-30'
+when age <= 40 then '30-40'
+when age <= 50 then '40-50'
+when age <= 60 then '50-60'
+else 'above 60'
+end as age_segment
+From
+(Select income, timestampdiff (YEAR, birth_date, Now()) as age
+From household) as t1
+Group By age_segment;
+
+-- Major expense type has the highest count of household members spending on it
+
+Select count (*) as Total, major_expense_type
+From household
+Group by major_expense_type
+Order By Total desc
+Limit 1;
+
+-- Average income of household members who spend more than 8000 on major expenses
+
+Select Avg (Income_spend_morethan_8000)
+From
+(Select Case when expenses > 8000 then income else 0 end as Income_spend_morethan_8000
+From household) as t1
+Where Income_spend_morethan_8000 <> 0;
+
+SELECT
+AVG(income) AS Average_Income
+FROM household
+WHERE expenses > 8000
+GROUP BY CASE
+WHEN expenses >= 10000 THEN 'High'
+WHEN expenses >= 8000 AND expenses < 10000 THEN 'Medium'
+ELSE 'Low'
+END;
+
+-- Members of the household have an income greater than the average income of their respective age groups
+
+Select Count (*), t4.age_segment
+From
+(Select income, member_name,
+CASE
+When age < 20 then 'below 20'
+when age <= 30 then '20-30'
+when age <= 40 then '30-40'
+when age <= 50 then '40-50'
+when age <= 60 then '50-60'
+else 'above 60'
+end as age_segment1
+From
+(Select Distinct member_name,income, timestampdiff (YEAR, birth_date, Now()) as age
+From household ) as t2)  as t3
+Inner Join
+(Select Avg (income) as Average_Income,
+CASE
+When age < 20 then 'below 20'
+when age <= 30 then '20-30'
+when age <= 40 then '30-40'
+when age <= 50 then '40-50'
+when age <= 60 then '50-60'
+else 'above 60'
+end as age_segment
+From
+(Select income, timestampdiff (YEAR, birth_date, Now()) as age
+From household ) as t1
+Group By age_segment) as t4
+On t3.age_segment1 = t4.age_segment
+Where t3.income > t4.Average_Income
+Group by t4.age_segment;
+
+-- Major expense type(s) accounts for more than 50% of the household's total expenses
+
+
+Select major_expense_type, sum (expenses) as total_expenses
+From household
+Group By major_expense_type, member_name
+
+
