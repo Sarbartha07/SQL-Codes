@@ -311,7 +311,7 @@ From
 (Select Resolved, Extract (Week from Complaint_date) as Complaint_Week
 From Complaints) as t1;
  
- SELECT *,
+SELECT *,
 LAG(TotalComplaints) OVER(PARTITION BY Resolved ORDER BY _week) AS Past
 FROM (SELECT Resolved,
      EXTRACT(WEEK FROM Complaint_Date) as _week,
