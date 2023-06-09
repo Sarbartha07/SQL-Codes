@@ -299,3 +299,22 @@ Where Rank_Inventory = 1;
 SELECT Complaint_Name, DATEDIFF(NOW(),Complaint_Date) AS TotalDaysNotResolved, RANK() OVER(PARTITION BY Complaint_Name ORDER BY DATEDIFF(NOW(),Complaint_Date) DESC) AS _rank 
 FROM Complaints 
 WHERE Resolved != 'Resolved';
+
+Select *, Revenue - Lag (Revenue) Over (Partition By Cust_Usage Order By Purchase_Week) as Profit_Loss
+From
+(Select Cust_Usage, Extract (Week from DateofPurchase) as Purchase_Week,Sum (Amount_Paid) as Revenue
+From ProductSalesFact
+Group By Cust_Usage, Purchase_Week) as t1;
+
+Select Distinct *, Count (*) Over (Partition by Resolved, Complaint_Week) as Complaint_Count
+From
+(Select Resolved, Extract (Week from Complaint_date) as Complaint_Week
+From Complaints) as t1;
+ 
+ SELECT *,
+LAG(TotalComplaints) OVER(PARTITION BY Resolved ORDER BY _week) AS Past
+FROM (SELECT Resolved,
+     EXTRACT(WEEK FROM Complaint_Date) as _week,
+     COUNT(*) AS TotalComplaints
+     FROM Complaints
+     GROUP BY Resolved, _week) AS T;
